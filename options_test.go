@@ -19,7 +19,7 @@ type OptionsTestSuite struct {
 
 func (suite *OptionsTestSuite) SetupSuite() {
 	suite.server = httptest.NewServer(http.HandlerFunc(echoHandler))
-	suite.client = NewClient(WithBaseURL(suite.server.URL))
+	suite.client = NewClient(WithBaseURL(suite.server.URL)).(*client)
 }
 
 func (suite *OptionsTestSuite) TearDownSuite() {
@@ -46,7 +46,8 @@ func (adapter headerAdapter) Adapt(r *http.Request) {
 
 func (suite *OptionsTestSuite) TestWithAdapter() {
 	adapter := headerAdapter{Key: "TestKey", Value: "TestValue"}
-	suite.client = NewClient(WithAdapter(adapter), WithBaseURL(suite.server.URL))
+	suite.client = NewClient(WithAdapter(adapter),
+		WithBaseURL(suite.server.URL)).(*client)
 
 	res, err := suite.client.Get("/", nil)
 	require.NoError(suite.T(), err)

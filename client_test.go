@@ -20,7 +20,7 @@ type ClientTestSuite struct {
 
 func (suite *ClientTestSuite) SetupSuite() {
 	suite.server = httptest.NewServer(http.HandlerFunc(echoHandler))
-	suite.client = NewClient(WithBaseURL(suite.server.URL))
+	suite.client = NewClient(WithBaseURL(suite.server.URL)).(*client)
 }
 
 func (suite *ClientTestSuite) TearDownSuite() {
@@ -28,7 +28,7 @@ func (suite *ClientTestSuite) TearDownSuite() {
 }
 
 func (suite *ClientTestSuite) TestNewClient() {
-	client := NewClient()
+	client := NewClient().(*client)
 	assert.ObjectsAreEqualValues(client.opts, defaultOptions)
 }
 
