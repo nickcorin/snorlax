@@ -7,13 +7,21 @@ import (
 	"net/url"
 )
 
+type Client interface {
+	Delete(string, url.Values, io.Reader) (*http.Response, error)
+	Do(*http.Request) (*http.Response, error)
+	Get(string, url.Values) (*http.Response, error)
+	Post(string, url.Values, io.Reader) (*http.Response, error)
+	Put(string, url.Values, io.Reader) (*http.Response, error)
+}
+
 type client struct {
 	opts clientOptions
 }
 
 // NewClient returns a transit Client configured with the provided
 // ClientOptions.
-func NewClient(opts ...ClientOption) *client {
+func NewClient(opts ...ClientOption) Client {
 	c := client{
 		opts: defaultOptions,
 	}
@@ -108,5 +116,3 @@ func (c *client) Do(r *http.Request) (*http.Response, error) {
 
 	return res, nil
 }
-
-
