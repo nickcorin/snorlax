@@ -8,6 +8,7 @@ import (
 )
 
 type Client interface {
+	Adapt(ClientOption)
 	Delete(string, url.Values, io.Reader) (*http.Response, error)
 	Do(*http.Request) (*http.Response, error)
 	Get(string, url.Values) (*http.Response, error)
@@ -31,6 +32,10 @@ func NewClient(opts ...ClientOption) Client {
 	}
 
 	return &c
+}
+
+func (c *client) Adapt(opt ClientOption) {
+	opt(&c.opts)
 }
 
 func (c *client) Delete(uri string, params url.Values, body io.Reader) (
