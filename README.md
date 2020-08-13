@@ -52,7 +52,7 @@ if err != nil {
 }
 ```
 
-### Performing a request with query parameters.
+#### Performing a request with query parameters.
 ```golang
 params := make(url.Values)
 params.Set("name", "Snorlax")
