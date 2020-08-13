@@ -16,7 +16,7 @@ type Client struct {
 	transport      *http.Client
 }
 
-// NewClient returns a transit Client configured with the provided
+// NewClient returns a snorlax client configured with the provided
 // ClientOptions.
 func NewClient(opts ...ClientOption) *Client {
 	c := Client{

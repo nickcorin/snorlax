@@ -32,7 +32,7 @@ func WithRequestOptions(opts ...RequestOption) ClientOptionFunc {
 }
 
 // WithTransport provides a RequestOptionFunc to configure the internal
-// http.Client transport of the transit Client.
+// http.Client of the client.
 func WithTransport(t *http.Client) ClientOptionFunc {
 	return func(c *Client) {
 		c.transport = t
@@ -62,8 +62,7 @@ func WithBasicAuth(username, password string) RequestOptionFunc {
 	}
 }
 
-// WithHeader provides a RequestOptionFunc to configure request headers to be
-// included with each request made by a transit client.
+// WithHeader provides a RequestOptionFunc to set a header on a request.
 func WithHeader(key, value string) RequestOptionFunc {
 	return func(r *http.Request) {
 		r.Header.Set(key, value)
