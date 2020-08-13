@@ -12,7 +12,7 @@ import "github.com/nickcorin/snorlax"
 func main() {
 	// Creating a client, with some configuration options.
 	client := snorlax.NewClient(
-		snorlax.WithBaseURL("https://www.example.com),
+		snorlax.WithBaseURL("https://www.example.com"),
 		snorlax.WithRequestOptions(
 			snorlax.WithHeader("Accept", "application/json"),
 			snorlax.WithHeader("Content-Type", "application/json"),
@@ -38,8 +38,7 @@ func main() {
 	// Perform a request with body.
 	payload := []byte("{\"name\": \"Snorlax\", \"number\": 143}")
 
-	res, err := client.Post(context.Background(), "/example", nil,
-		bytes.NewBuffer(payload))
+	res, err := client.Post(context.Background(), "/example", nil, bytes.NewBuffer(payload))
 	if err != nil {
 		log.Fatal(err)
 	}
