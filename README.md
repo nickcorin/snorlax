@@ -1,6 +1,6 @@
 # Snorlax REST Client 
 
-![Snorlax](/images/snorlax.jpeg)
+![Snorlax](/images/snorlax.jpg)
 
 ## Usage
 
