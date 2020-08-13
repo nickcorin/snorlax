@@ -74,6 +74,16 @@ if err != nil {
 }
 ```
 
+#### Performing a request with `RequestOptions`.
+```golang
+username, password := "testuser", "testpassword"
+
+res, err := client.Get(context.Background(), "/example", nil, WithBasicAuth(username, password))
+if err != nil {
+	log.Fatal(err)
+}
+```
+
 #### Extracting JSON out of a response.
 ```golang
 type Pokemon struct {
