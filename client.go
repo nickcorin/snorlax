@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// Client defines a stateful REST client able to perform HTTP requests.
 type Client struct {
 	baseURL        string
 	requestOptions []RequestOption
@@ -65,21 +66,25 @@ func (c *Client) call(ctx context.Context, method, path string,
 	return &Response{*res}, nil
 }
 
+// Delete performs a DELETE request.
 func (c *Client) Delete(ctx context.Context, uri string, query url.Values,
 	body io.Reader, opts ...RequestOption) (*Response, error) {
 	return c.call(ctx, http.MethodDelete, uri, query, body, opts...)
 }
 
+// Get performs a GET request.
 func (c *Client) Get(ctx context.Context, uri string, query url.Values,
 	opts ...RequestOption) (*Response, error) {
 	return c.call(ctx, http.MethodGet, uri, query, nil, opts...)
 }
 
+// Post performs a POST request.
 func (c *Client) Post(ctx context.Context, uri string, query url.Values,
 	body io.Reader, opts ...RequestOption) (*Response, error) {
 	return c.call(ctx, http.MethodPost, uri, query, body, opts...)
 }
 
+// Put performs a PUT request.
 func (c *Client) Put(ctx context.Context, uri string, query url.Values,
 	body io.Reader, opts ...RequestOption) (*Response, error) {
 	return c.call(ctx, http.MethodPut, uri, query, body, opts...)
