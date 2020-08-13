@@ -1,4 +1,4 @@
-module github.com/nickcorin/transit
+module github.com/nickcorin/snorlax
 
 go 1.14
 

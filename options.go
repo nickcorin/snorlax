@@ -1,59 +1,71 @@
-package transit
+package snorlax
 
 import "net/http"
 
-var defaultOptions = clientOptions{
-	adapters: make([]Adapter, 0),
-	headers: make(http.Header),
-	transport: http.DefaultClient,
+// ClientOption defines an option to configure all requests made by the client.
+type ClientOption interface {
+	Apply(*Client)
 }
 
-type clientOptions struct {
-	adapters  []Adapter
-	baseURL   string
-	headers   http.Header
-	transport *http.Client
+// ClientOptionFunc is a function to ClientOptionFunc adapter.
+type ClientOptionFunc func(*Client)
+
+// Apply satisfies the ClientOption interface.
+func (f ClientOptionFunc) Apply(c *Client) {
+	f(c)
 }
 
-// Adapter defines a functional wrapper type to preprocess the http request
-// before it gets sent.
-type Adapter interface {
-	Adapt(*http.Request)
-}
-
-// ClientOption defines a functional wrapper type to provide configuration
-// options for the transit Client.
-type ClientOption func(*clientOptions)
-
-// WithAdapter provides a ClientOption to configure adapters which will be
-// sequentially run before executing requests.
-func WithAdapter(adapter Adapter) ClientOption {
-	return func(opts *clientOptions) {
-		opts.adapters = append(opts.adapters, adapter)
-	}
-}
-
-// WithBaseURL provides a ClientOption to configure a global base URL for the
-// Client. If a base URL is set, it will prefix all request paths made by the
+// WithBaseURL returns a ClientOptionFunc to configure the base url of the
 // client.
-func WithBaseURL(url string) ClientOption {
-	return func(opts *clientOptions) {
-		opts.baseURL = url
+func WithBaseURL(url string) ClientOptionFunc {
+	return func(c *Client) {
+		c.baseURL = url
 	}
 }
 
-// WithHeader provides a ClientOption to configure request headers to be
+// WithRequestOptinos returns a ClientOptionFunc to set RequestOptions to be
+// applied to all requests.
+func WithRequestOptions(opts ...RequestOption) ClientOptionFunc {
+	return func(c *Client) {
+		c.requestOptions = append(c.requestOptions, opts...)
+	}
+}
+
+// WithTransport provides a RequestOptionFunc to configure the internal
+// http.Client transport of the transit Client.
+func WithTransport(t *http.Client) ClientOptionFunc {
+	return func(c *Client) {
+		c.transport = t
+	}
+}
+
+// RequestOption defines an option to configure individual requests made by the
+// client. You can set RequestOptions that you want to be applied to all
+// requests made by the client by using WithRequestOptions.
+type RequestOption interface {
+	Apply(*http.Request)
+}
+
+// RequestOptionFunc is a function to RequestOptionFunc adapter.
+type RequestOptionFunc func(*http.Request)
+
+// Apply satisfies the RequestOption interface.
+func (f RequestOptionFunc) Apply(r *http.Request) {
+	f(r)
+}
+
+// WithBasicAuth returns a RequestOptionFunc to set basic authentication on a
+// request.
+func WithBasicAuth(username, password string) RequestOptionFunc {
+	return func(r *http.Request) {
+		r.SetBasicAuth(username, password)
+	}
+}
+
+// WithHeader provides a RequestOptionFunc to configure request headers to be
 // included with each request made by a transit client.
-func WithHeader(key, value string) ClientOption {
-	return func(opts *clientOptions) {
-		opts.headers.Set(key, value)
-	}
-}
-
-// WithTransport provides a ClientOption to configure the internal http.Client
-// transport of the transit Client.
-func WithTransport(t *http.Client) ClientOption {
-	return func(opts *clientOptions) {
-		opts.transport = t
+func WithHeader(key, value string) RequestOptionFunc {
+	return func(r *http.Request) {
+		r.Header.Set(key, value)
 	}
 }

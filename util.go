@@ -1,4 +1,4 @@
-package transit
+package snorlax
 
 import (
 	"io/ioutil"

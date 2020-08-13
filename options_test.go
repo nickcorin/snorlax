@@ -1,76 +1,53 @@
-package transit
+package snorlax
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
+	"context"
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
 )
 
 type OptionsTestSuite struct {
 	suite.Suite
-	client        *client
-	server        *httptest.Server
-	options       clientOptions
-	targetOptions clientOptions
+	client *Client
+	server *httptest.Server
 }
 
 func (suite *OptionsTestSuite) SetupSuite() {
 	suite.server = httptest.NewServer(http.HandlerFunc(echoHandler))
-	suite.client = NewClient(WithBaseURL(suite.server.URL)).(*client)
+	suite.client = NewClient(WithBaseURL(suite.server.URL))
+}
+
+func (suite *OptionsTestSuite) TestWithBaseURL() {
+	url := "https://www.example.com"
+	suite.client = NewClient(WithBaseURL(url))
+	suite.Require().NotNil(suite.client)
+	suite.Require().Equal(suite.client.baseURL, url)
+}
+
+func (suite *OptionsTestSuite) TestWithRequestOptions() {
+	username, password := "test", "12345"
+	suite.client = NewClient(WithRequestOptions(
+		WithBasicAuth(username, password),
+		WithHeader("custom-header", "test"),
+	))
+
+	auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s",
+		username, password)))
+
+	res, err := suite.client.Get(context.TODO(), "https://www.example.com", nil)
+	suite.Require().NoError(err)
+	suite.Require().NotNil(res)
+	suite.Require().Contains(res.Request.Header.Get("Authorization"),
+		fmt.Sprintf("Basic %s", auth))
 }
 
 func (suite *OptionsTestSuite) TearDownSuite() {
 	suite.server.Close()
-}
-
-func (suite *OptionsTestSuite) SetupTest() {
-	suite.options = defaultOptions
-	suite.targetOptions = clientOptions{
-		baseURL: "https://www.example.com",
-		headers: make(http.Header),
-	}
-	suite.targetOptions.headers.Set("TestKey", "TestValue")
-}
-
-type headerAdapter struct {
-	Key string
-	Value string
-}
-
-func (adapter headerAdapter) Adapt(r *http.Request) {
-	r.Header.Set(adapter.Key, adapter.Value)
-}
-
-func (suite *OptionsTestSuite) TestWithAdapter() {
-	adapter := headerAdapter{Key: "TestKey", Value: "TestValue"}
-	suite.client = NewClient(WithAdapter(adapter),
-		WithBaseURL(suite.server.URL)).(*client)
-
-	res, err := suite.client.Get("/", nil)
-	require.NoError(suite.T(), err)
-	require.NotNil(suite.T(), res)
-	require.Contains(suite.T(), res.Header.Values(adapter.Key), adapter.Value)
-}
-
-func (suite *OptionsTestSuite) TestWithBaseURL() {
-	WithBaseURL(suite.targetOptions.baseURL)(&suite.options)
-	require.Equal(suite.T(), suite.targetOptions.baseURL, suite.options.baseURL)
-}
-
-func (suite *OptionsTestSuite) TestWithHeader() {
-	for k, v := range suite.targetOptions.headers {
-		for _, header := range v {
-			WithHeader(k, header)(&suite.options)
-		}
-	}
-
-	for k := range suite.targetOptions.headers {
-		assert.Equal(suite.T(), suite.targetOptions.headers.Get(k),
-			suite.options.headers.Get(k))
-	}
 }
 
 func TestOptionsTestSuite(t *testing.T) {
