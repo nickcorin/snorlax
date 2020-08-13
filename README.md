@@ -4,6 +4,24 @@ Snorlax is a REST client written in Go.
 
 ![Snorlax](/images/snorlax.jpg)
 
+## Installation
+
+To install `snorlax`, use `go get`:
+```
+go get github.com/nickcorin/snorlax
+```
+
+Import the `snorlax` package into your code:
+```golang
+package main
+
+import "github.com/nickcorin/snorlax"
+
+func main() {
+	client := snorlax.NewClient()
+}
+```
+
 ## Usage
 
 ### Creating a simple client.
@@ -32,14 +50,14 @@ if err != nil {
 
 ### Performing a request with query parameters.
 ```golang
-	params := make(url.Values)
-	params.Set("name", "Snorlax")
-	params.Set("number", 143")
+params := make(url.Values)
+params.Set("name", "Snorlax")
+params.Set("number", 143")
 
-	res, err := client.Get(context.Background(), "/example", params)
-	if err != nil {
-		log.Fatal(err)
-	}
+res, err := client.Get(context.Background(), "/example", params)
+if err != nil {
+	log.Fatal(err)
+}
 ```
 
 ### Performing a request with a body.
@@ -71,4 +89,7 @@ if err = res.JSON(pokemon); err != nil {
 ```
 
 ## Contributing
-Contributions are welcome! Feel free to submit pull requests. :) 
+Please feel free to submit issues, fork the repositoy and send pull requests!
+
+## License
+This project is licensed under the terms of the MIT license.
