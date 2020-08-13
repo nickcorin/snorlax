@@ -1,5 +1,9 @@
 # Snorlax REST Client 
 
+[![Build](https://github.com/nickcorin/snorlax/workflows/Go/badge.svg?branch=master)](https://github.com/nickcorin/snorlax/actions?query=workflow%3AGo)
+[![Go Report Card](https://goreportcard.com/badge/github.com/nickcorin/snorlax?style=flat-square)](https://goreportcard.com/report/github.com/nickcorin/snorlax)
+[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/nickcorin/snorlax)
+
 Snorlax is a REST client written in Go.
 
 ![Snorlax](/images/snorlax.jpg)
@@ -24,12 +28,12 @@ func main() {
 
 ## Usage
 
-### Creating a simple client.
+#### Creating a simple client.
 ```golang
 client := snorlax.NewClient()
 ```
 
-### Configuring the client using `ClientOptions`.
+#### Configuring the client using `ClientOptions`.
 ```golang
 client := snorlax.NewClient(
 	snorlax.WithBaseURL("https://www.example.com"),
@@ -40,7 +44,7 @@ client := snorlax.NewClient(
 )
 ```
 
-### Performing a simple request.
+#### Performing a simple request.
 ```golang
 res, err := client.Get(context.Background(), "/example", nil)
 if err != nil {
@@ -60,7 +64,7 @@ if err != nil {
 }
 ```
 
-### Performing a request with a body.
+#### Performing a request with a body.
 ```golang
 payload := []byte("{\"name\": \"Snorlax\", \"number\": 143}")
 
@@ -70,7 +74,7 @@ if err != nil {
 }
 ```
 
-### Extracting JSON out of a response.
+#### Extracting JSON out of a response.
 ```golang
 type Pokemon struct {
 	Name 	string `json:"name"`
