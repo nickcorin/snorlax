@@ -23,7 +23,7 @@ func WithBaseURL(url string) ClientOptionFunc {
 	}
 }
 
-// WithRequestOptinos returns a ClientOptionFunc to set RequestOptions to be
+// WithRequestOptions returns a ClientOptionFunc to set RequestOptions to be
 // applied to all requests.
 func WithRequestOptions(opts ...RequestOption) ClientOptionFunc {
 	return func(c *Client) {

@@ -1,4 +1,4 @@
-# Snorlax REST Client 
+# Snorlax
 
 [![Build](https://github.com/nickcorin/snorlax/workflows/Go/badge.svg?branch=master)](https://github.com/nickcorin/snorlax/actions?query=workflow%3AGo)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nickcorin/snorlax?style=flat-square)](https://goreportcard.com/report/github.com/nickcorin/snorlax)
