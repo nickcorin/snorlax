@@ -19,14 +19,14 @@ type OptionsTestSuite struct {
 
 func (suite *OptionsTestSuite) SetupSuite() {
 	suite.server = httptest.NewServer(http.HandlerFunc(echoHandler))
-	suite.client = NewClient(&ClientOptions{
+	suite.client = New(&ClientOptions{
 		BaseURL: suite.server.URL,
 	})
 }
 
 func (suite *OptionsTestSuite) TestWithBaseURL() {
 	url := "https://www.example.com"
-	suite.client = NewClient(&ClientOptions{
+	suite.client = New(&ClientOptions{
 		BaseURL: url,
 	})
 
@@ -36,7 +36,7 @@ func (suite *OptionsTestSuite) TestWithBaseURL() {
 
 func (suite *OptionsTestSuite) TestWithCallOptions() {
 	username, password := "test", "12345"
-	suite.client = NewClient(nil)
+	suite.client = New(nil)
 
 	auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s",
 		username, password)))

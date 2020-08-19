@@ -14,9 +14,9 @@ type Client struct {
 	opts *ClientOptions
 }
 
-// NewClient returns a snorlax client configured with the provided
+// New returns a snorlax client configured with the provided
 // ClientOptions.
-func NewClient(opts *ClientOptions) *Client {
+func New(opts *ClientOptions) *Client {
 	if opts == nil {
 		opts = &defaultOptions
 	}

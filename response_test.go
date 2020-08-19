@@ -19,7 +19,7 @@ type ResponseTestSuite struct {
 
 func (suite *ResponseTestSuite) SetupSuite() {
 	suite.server = httptest.NewServer(http.HandlerFunc(echoHandler))
-	suite.client = NewClient(&ClientOptions{
+	suite.client = New(&ClientOptions{
 		BaseURL: suite.server.URL,
 	})
 }

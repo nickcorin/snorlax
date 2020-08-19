@@ -24,7 +24,7 @@ func (suite *ClientTestSuite) SetupSuite() {
 	}
 
 	suite.server = httptest.NewServer(http.HandlerFunc(h))
-	suite.client = snorlax.NewClient(&snorlax.ClientOptions{
+	suite.client = snorlax.New(&snorlax.ClientOptions{
 		BaseURL: suite.server.URL,
 	})
 }

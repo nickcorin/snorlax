@@ -23,7 +23,7 @@ package main
 import "github.com/nickcorin/snorlax"
 
 func main() {
-	client := snorlax.NewClient(nil)
+	client := snorlax.New(nil)
 }
 ```
 
@@ -31,12 +31,12 @@ func main() {
 
 #### Creating a simple client.
 ```golang
-client := snorlax.NewClient(nil)
+client := snorlax.New(nil)
 ```
 
 #### Configuring the client using `ClientOptions` and `CallOption`s.
 ```golang
-client := snorlax.NewClient(&snorlax.ClientOptions{
+client := snorlax.New(&snorlax.ClientOptions{
 		BaseURL: 		"https://www.example.com",
 		CallOptions: 	[]snorlax.CallOption{
 			snorlax.WithHeader("Content-Type", "application/json"),
