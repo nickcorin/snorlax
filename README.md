@@ -22,7 +22,7 @@ package main
 import "github.com/nickcorin/snorlax"
 
 func main() {
-	client := snorlax.NewClient()
+	client := snorlax.NewClient(nil)
 }
 ```
 
@@ -74,7 +74,7 @@ if err != nil {
 }
 ```
 
-#### Performing a request with `CallOptions`.
+#### Performing a request with `CallOption`s.
 ```golang
 username, password := "testuser", "testpassword"
 
