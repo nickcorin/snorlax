@@ -1,12 +1,15 @@
 # Snorlax
 
-[![Build](https://github.com/nickcorin/snorlax/workflows/Go/badge.svg?branch=master)](https://github.com/nickcorin/snorlax/actions?query=workflow%3AGo)
-[![Go Report Card](https://goreportcard.com/badge/github.com/nickcorin/snorlax?style=flat-square)](https://goreportcard.com/report/github.com/nickcorin/snorlax)
-[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/nickcorin/snorlax)
-
-Snorlax is a simple REST client written in Go.
-
-![Snorlax](/images/snorlax.jpg)
+<p align="center">
+<h1 align="center">Snorlax</h1>
+<p align="center">Simple HTTP and REST client library written in Go</p>
+</p>
+<p align="center">
+<p align="center"><a href="https://github.com/nickcorin/snorlax/actions?query=workflow%3AGo"><img src="https://github.com/nickcorin/snorlax/workflows/Go/badge.svg?branch=master" alt="Build Status"></a> <a href="https://goreportcard.com/report/github.com/nickcorin/snorlax"><img src="https://goreportcard.com/badge/github.com/nickcorin/snorlax?style=flat-square" alt="Go Report Card"></a> <a href="http://godoc.org/github.com/nickcorin/snorlax"><img src="https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square" alt="GoDoc"></a> <a href="LICENSE"><img src="https://img.shields.io/github/license/nickcorin/snorlax" alt="License"></a></p>
+</p>
+<p align="center">
+<img src="/images/snorlax.jpg" />
+</p>
 
 ## Installation
 
