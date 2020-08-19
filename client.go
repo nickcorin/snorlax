@@ -11,30 +11,32 @@ import (
 
 // Client defines a stateful REST client able to perform HTTP requests.
 type Client struct {
-	baseURL        string
-	requestOptions []RequestOption
-	transport      *http.Client
+	opts *ClientOptions
 }
 
 // NewClient returns a snorlax client configured with the provided
 // ClientOptions.
-func NewClient(opts ...ClientOption) *Client {
-	c := Client{
-		transport: http.DefaultClient,
+func NewClient(opts *ClientOptions) *Client {
+	if opts == nil {
+		opts = &defaultOptions
 	}
 
-	for _, opt := range opts {
-		opt.Apply(&c)
+	if opts.Transport == nil {
+		opts.Transport = defaultOptions.Transport
 	}
 
-	return &c
+	if opts.CallOptions == nil {
+		opts.CallOptions = defaultOptions.CallOptions
+	}
+
+	return &Client{opts}
 }
 
 func (c *Client) call(ctx context.Context, method, path string,
-	query url.Values, body io.Reader, opts ...RequestOption) (*Response,
+	query url.Values, body io.Reader, opts ...CallOption) (*Response,
 	error) {
 
-	u := strings.Join([]string{c.baseURL, path}, "")
+	u := strings.Join([]string{c.opts.BaseURL, path}, "")
 	uri, err := url.Parse(u)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse url %s: %w", uri, err)
@@ -54,11 +56,11 @@ func (c *Client) call(ctx context.Context, method, path string,
 
 	// We first apply the request options from the client, so that they can be
 	// optionally overridden by individual request options.
-	for _, opt := range append(c.requestOptions, opts...) {
+	for _, opt := range append(c.opts.CallOptions, opts...) {
 		opt.Apply(req)
 	}
 
-	res, err := c.transport.Do(req)
+	res, err := c.opts.Transport.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform http request: %w", err)
 	}
@@ -68,24 +70,24 @@ func (c *Client) call(ctx context.Context, method, path string,
 
 // Delete performs a DELETE request.
 func (c *Client) Delete(ctx context.Context, uri string, query url.Values,
-	body io.Reader, opts ...RequestOption) (*Response, error) {
+	body io.Reader, opts ...CallOption) (*Response, error) {
 	return c.call(ctx, http.MethodDelete, uri, query, body, opts...)
 }
 
 // Get performs a GET request.
 func (c *Client) Get(ctx context.Context, uri string, query url.Values,
-	opts ...RequestOption) (*Response, error) {
+	opts ...CallOption) (*Response, error) {
 	return c.call(ctx, http.MethodGet, uri, query, nil, opts...)
 }
 
 // Post performs a POST request.
 func (c *Client) Post(ctx context.Context, uri string, query url.Values,
-	body io.Reader, opts ...RequestOption) (*Response, error) {
+	body io.Reader, opts ...CallOption) (*Response, error) {
 	return c.call(ctx, http.MethodPost, uri, query, body, opts...)
 }
 
 // Put performs a PUT request.
 func (c *Client) Put(ctx context.Context, uri string, query url.Values,
-	body io.Reader, opts ...RequestOption) (*Response, error) {
+	body io.Reader, opts ...CallOption) (*Response, error) {
 	return c.call(ctx, http.MethodPut, uri, query, body, opts...)
 }

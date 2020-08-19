@@ -19,27 +19,31 @@ type OptionsTestSuite struct {
 
 func (suite *OptionsTestSuite) SetupSuite() {
 	suite.server = httptest.NewServer(http.HandlerFunc(echoHandler))
-	suite.client = NewClient(WithBaseURL(suite.server.URL))
+	suite.client = NewClient(&ClientOptions{
+		BaseURL: suite.server.URL,
+	})
 }
 
 func (suite *OptionsTestSuite) TestWithBaseURL() {
 	url := "https://www.example.com"
-	suite.client = NewClient(WithBaseURL(url))
+	suite.client = NewClient(&ClientOptions{
+		BaseURL: url,
+	})
+
 	suite.Require().NotNil(suite.client)
-	suite.Require().Equal(suite.client.baseURL, url)
+	suite.Require().Equal(suite.client.opts.BaseURL, url)
 }
 
-func (suite *OptionsTestSuite) TestWithRequestOptions() {
+func (suite *OptionsTestSuite) TestWithCallOptions() {
 	username, password := "test", "12345"
-	suite.client = NewClient(WithRequestOptions(
-		WithBasicAuth(username, password),
-		WithHeader("custom-header", "test"),
-	))
+	suite.client = NewClient(nil)
 
 	auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s",
 		username, password)))
 
-	res, err := suite.client.Get(context.TODO(), "https://www.example.com", nil)
+	res, err := suite.client.Get(context.TODO(), "https://www.example.com", nil,
+		WithBasicAuth(username, password),
+		WithHeader("custom-header", "test"))
 	suite.Require().NoError(err)
 	suite.Require().NotNil(res)
 	suite.Require().Contains(res.Request.Header.Get("Authorization"),

@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/nickcorin/snorlax?style=flat-square)](https://goreportcard.com/report/github.com/nickcorin/snorlax)
 [![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/nickcorin/snorlax)
 
-Snorlax is a REST client written in Go.
+Snorlax is a simple REST client written in Go.
 
 ![Snorlax](/images/snorlax.jpg)
 
@@ -33,14 +33,14 @@ func main() {
 client := snorlax.NewClient()
 ```
 
-#### Configuring the client using `ClientOptions`.
+#### Configuring the client using `ClientOptions` and `CallOption`s.
 ```golang
-client := snorlax.NewClient(
-	snorlax.WithBaseURL("https://www.example.com"),
-	snorlax.WithRequestOptions(
-		snorlax.WithHeader("Accept", "application/json"),
-		snorlax.WithHeader("Content-Type", "application/json"),
-	),
+client := snorlax.NewClient(&snorlax.ClientOptions{
+		BaseURL: 		"https://www.example.com",
+		CallOptions: 	[]snorlax.CallOption{
+			snorlax.WithHeader("Content-Type", "application/json"),
+		},
+	}
 )
 ```
 
@@ -74,7 +74,7 @@ if err != nil {
 }
 ```
 
-#### Performing a request with `RequestOptions`.
+#### Performing a request with `CallOptions`.
 ```golang
 username, password := "testuser", "testpassword"
 
@@ -88,7 +88,7 @@ if err != nil {
 ```golang
 type Pokemon struct {
 	Name 	string `json:"name"`
-	Number 	string `json:"number"`
+	Number 	int    `json:"number"`
 }
 
 res, err := client.Get(context.Background(), "/example", nil)
@@ -97,7 +97,7 @@ if err != nil {
 }
 
 var pokemon Pokemon
-if err = res.JSON(pokemon); err != nil {
+if err = res.JSON(&pokemon); err != nil {
 	log.Fatal(err)
 }
 ```
