@@ -30,7 +30,7 @@ func main() {
 
 #### Creating a simple client.
 ```golang
-client := snorlax.NewClient()
+client := snorlax.NewClient(nil)
 ```
 
 #### Configuring the client using `ClientOptions` and `CallOption`s.
