@@ -1,5 +1,3 @@
-# Snorlax
-
 <p align="center">
 <h1 align="center">Snorlax</h1>
 <p align="center">Simple HTTP and REST client library written in Go</p>
