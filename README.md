@@ -23,24 +23,21 @@ package main
 import "github.com/nickcorin/snorlax"
 
 func main() {
-	client := snorlax.New(nil)
+	client := snorlax.DefaultClient
 }
 ```
 
 ## Usage
 
-#### Creating a simple client.
+#### Using the DefaultClient.
 ```golang
-client := snorlax.New(nil)
+client := snorlax.DefaultClient
 ```
 
 #### Configuring the client using `ClientOptions` and `CallOption`s.
 ```golang
-client := snorlax.New(&snorlax.ClientOptions{
+client := snorlax.NewClient(snorlax.ClientOptions{
 		BaseURL: 		"https://www.example.com",
-		CallOptions: 	[]snorlax.CallOption{
-			snorlax.WithHeader("Content-Type", "application/json"),
-		},
 	}
 )
 ```
@@ -75,7 +72,7 @@ if err != nil {
 }
 ```
 
-#### Performing a request with `CallOption`s.
+#### Performing a request with `PreRequestHook`s.
 ```golang
 username, password := "testuser", "testpassword"
 
