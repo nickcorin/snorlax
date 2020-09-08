@@ -13,7 +13,7 @@ import (
 
 type ClientTestSuite struct {
 	suite.Suite
-	client *snorlax.Client
+	client snorlax.Client
 	server *httptest.Server
 }
 
@@ -24,7 +24,7 @@ func (suite *ClientTestSuite) SetupSuite() {
 	}
 
 	suite.server = httptest.NewServer(http.HandlerFunc(h))
-	suite.client = snorlax.New(&snorlax.ClientOptions{
+	suite.client = snorlax.NewClient(snorlax.ClientOptions{
 		BaseURL: suite.server.URL,
 	})
 }

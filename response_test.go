@@ -1,4 +1,4 @@
-package snorlax
+package snorlax_test
 
 import (
 	"bytes"
@@ -8,18 +8,37 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/nickcorin/snorlax"
 	"github.com/stretchr/testify/suite"
 )
 
 type ResponseTestSuite struct {
 	suite.Suite
-	client *Client
+	client snorlax.Client
 	server *httptest.Server
 }
 
+func EchoHandler(w http.ResponseWriter, r *http.Request) {
+	for headerKey, headerValues := range r.Header {
+		for _, headerValue := range headerValues {
+			w.Header().Add(headerKey, headerValue)
+		}
+	}
+
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
+}
+
 func (suite *ResponseTestSuite) SetupSuite() {
-	suite.server = httptest.NewServer(http.HandlerFunc(echoHandler))
-	suite.client = New(&ClientOptions{
+	suite.server = httptest.NewServer(http.HandlerFunc(EchoHandler))
+	suite.client = snorlax.NewClient(snorlax.ClientOptions{
 		BaseURL: suite.server.URL,
 	})
 }
@@ -29,11 +48,11 @@ func (suite *ResponseTestSuite) TearDownSuite() {
 }
 
 func (suite *ResponseTestSuite) TestIsSuccess() {
-	successResponse := Response{http.Response{
+	successResponse := snorlax.Response{http.Response{
 		StatusCode: http.StatusOK,
 	}}
 
-	failedResponse := Response{http.Response{
+	failedResponse := snorlax.Response{http.Response{
 		StatusCode: http.StatusInternalServerError,
 	}}
 
