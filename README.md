@@ -37,7 +37,7 @@ client := snorlax.DefaultClient
 #### Configuring the client using `ClientOptions`.
 ```golang
 client := snorlax.NewClient(snorlax.ClientOptions{
-		BaseURL: 		"https://www.example.com",
+		BaseURL: "https://www.example.com",
 	}
 )
 ```
