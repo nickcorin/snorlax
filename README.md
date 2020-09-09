@@ -34,12 +34,18 @@ func main() {
 client := snorlax.DefaultClient
 ```
 
-#### Configuring the client using `ClientOptions`.
+#### Configuring the client.
 ```golang
-client := snorlax.NewClient(snorlax.ClientOptions{
-		BaseURL: "https://www.example.com",
-	}
-)
+// You can configure some attibutes when constructing the client.
+client := snorlax.Client{
+	BaseURL: "https://www.example.com",
+}
+
+// You can also configure the client after construction.
+client.AddRequestHook(snorlax.WithHeader("X-Powered-By", "Snorlax")
+
+// You can also chain configuration functions.
+client.SetProxyURL("https://proxy.example.com").Get("/example", nil, nil)
 ```
 
 #### Performing a simple request.
@@ -72,8 +78,12 @@ if err != nil {
 }
 ```
 
-#### Performing a request with `PreRequestHook`s.
+#### Performing a request with `RequestHook`s.
 ```golang
+// You can set RequestHooks which run on every request.
+client.AddRequestHook("Content-Type", "application/json")
+
+// You can also set RequestHooks to run for single requests.
 username, password := "testuser", "testpassword"
 
 res, err := client.Get(context.Background(), "/example", nil, WithBasicAuth(username, password))

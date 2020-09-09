@@ -9,91 +9,32 @@ import (
 	"strings"
 )
 
-// DefaultClient is a snorlax client configured with all of the default options.
-var DefaultClient = &client{
-	opts: defaultOptions,
-}
+// DefaultClient is a Snorlax client configured with all of the default options.
+var DefaultClient = &Client{
+	BaseURL: "",
 
-var defaultOptions = ClientOptions{
-	PreRequestHooks: make([]RequestHook, 0),
-	Transport:       http.DefaultClient,
-}
-
-// Client describes an HTTP REST client.
-type Client interface {
-	// Delete performs a DELETE request.
-	Delete(context.Context, string, url.Values, io.Reader, ...RequestHook) (
-		*Response, error)
-
-	// Get performs a GET request.
-	Get(context.Context, string, url.Values, ...RequestHook) (*Response, error)
-
-	// Head performs a HEAD request.
-	Head(context.Context, string, url.Values, ...RequestHook) (*Response, error)
-
-	// Options performs an OPTIONS request.
-	Options(context.Context, string, url.Values, ...RequestHook) (*Response,
-		error)
-
-	// Post performs a POST request.
-	Post(context.Context, string, url.Values, io.Reader, ...RequestHook) (
-		*Response, error)
-
-	// Put performs a PUT request.
-	Put(context.Context, string, url.Values, io.Reader, ...RequestHook) (
-		*Response, error)
-}
-
-// ClientOptions defines all the configurable attributes of a Client. None of
-// the options are mandatory, although if you do not want to configure the
-// client then you should use the DefaultClient.
-type ClientOptions struct {
-	// BaseURL is prepended to the URI of all requests made by the Client.
-	BaseURL string
-
-	// PreRequestHooks is a list of RequestHooks that get applied in order to
-	// requests made by the Client just before they are sent.
-	PreRequestHooks []RequestHook
-
-	PostRequestHooks []ResponseHook
-
-	// Transport is the internal HTTP client used to perform the requests.
-	Transport *http.Client
-}
-
-// New returns a snorlax client configured with the provided ClientOptions.
-func NewClient(opts ClientOptions) Client {
-	c := client{defaultOptions}
-
-	if opts.BaseURL != "" {
-		c.opts.BaseURL = opts.BaseURL
-	}
-
-	if opts.PreRequestHooks != nil {
-		c.opts.PreRequestHooks = opts.PreRequestHooks
-	}
-
-	if opts.PostRequestHooks != nil {
-		c.opts.PostRequestHooks = opts.PostRequestHooks
-	}
-
-	if opts.Transport != nil {
-		c.opts.Transport = opts.Transport
-	}
-
-	return &c
+	httpClient:   http.DefaultClient,
+	requestHooks: make([]RequestHook, 0),
+	proxyURL:     nil,
 }
 
 // Client defines a stateful REST client able to perform HTTP requests.
-type client struct {
-	opts ClientOptions
+type Client struct {
+	// BaseURL is prepended to the URI of all requests made by the Client.
+	BaseURL string
+
+	httpClient *http.Client
+	proxyURL   *url.URL
+	// requestHooks is a list of RequestHooks that get applied in order to
+	// requests made by the Client just before they are sent.
+	requestHooks []RequestHook
 }
 
-func (c *client) call(ctx context.Context, method, target string,
+func (c *Client) call(ctx context.Context, method, target string,
 	query url.Values, body io.Reader, hooks ...RequestHook) (*Response,
 	error) {
 
-	u := strings.Join([]string{c.opts.BaseURL, target}, "")
+	u := strings.Join([]string{c.BaseURL, target}, "")
 	uri, err := url.Parse(u)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse url %s: %w", uri, err)
@@ -113,54 +54,135 @@ func (c *client) call(ctx context.Context, method, target string,
 
 	// We first apply the request options from the client, so that they can be
 	// optionally overridden by individual request options.
-	for _, hook := range append(c.opts.PreRequestHooks, hooks...) {
+	for _, hook := range append(c.requestHooks, hooks...) {
 		hook(req)
 	}
 
-	res, err := c.opts.Transport.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to perform http request: %w", err)
+	// httpClient could be nil if it was not set on Client creation. This is to
+	// ensure that a default http client is always present to prevent panics.
+	if c.httpClient == nil {
+		c.createClient()
 	}
 
-	for _, hook := range c.opts.PostRequestHooks {
-		hook(res)
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to perform http request: %w", err)
 	}
 
 	return &Response{*res}, nil
 }
 
+func (c *Client) createClient() {
+	c.httpClient = &http.Client{}
+}
+
+// AddRequestHook adds a RequestHook to be run just before the client
+// performs requests. These hooks are executed in order.
+func (c *Client) AddRequestHook(hook RequestHook) *Client {
+	if c.requestHooks == nil {
+		c.requestHooks = make([]RequestHook, 0)
+	}
+
+	c.requestHooks = append(c.requestHooks, hook)
+	return c
+}
+
+// AddRequestHooks adds multiple RequestHooks to be run just before the client
+// performs requests. These hooks are executed in order.
+func (c *Client) AddRequestHooks(hooks ...RequestHook) *Client {
+	for _, hook := range hooks {
+		c.AddRequestHook(hook)
+	}
+
+	return c
+}
+
 // Delete performs a DELETE request.
-func (c *client) Delete(ctx context.Context, target string, query url.Values,
+func (c *Client) Delete(ctx context.Context, target string, query url.Values,
 	body io.Reader, opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodDelete, target, query, body, opts...)
 }
 
 // Get performs a GET request.
-func (c *client) Get(ctx context.Context, target string, query url.Values,
+func (c *Client) Get(ctx context.Context, target string, query url.Values,
 	opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodGet, target, query, nil, opts...)
 }
 
 // Head performs a HEAD request.
-func (c *client) Head(ctx context.Context, target string, query url.Values,
+func (c *Client) Head(ctx context.Context, target string, query url.Values,
 	opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodHead, target, query, nil, opts...)
 }
 
 // Options performs a OPTIONS request.
-func (c *client) Options(ctx context.Context, target string, query url.Values,
+func (c *Client) Options(ctx context.Context, target string, query url.Values,
 	opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodOptions, target, query, nil, opts...)
 }
 
 // Post performs a POST request.
-func (c *client) Post(ctx context.Context, target string, query url.Values,
+func (c *Client) Post(ctx context.Context, target string, query url.Values,
 	body io.Reader, opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodPost, target, query, body, opts...)
 }
 
 // Put performs a PUT request.
-func (c *client) Put(ctx context.Context, target string, query url.Values,
+func (c *Client) Put(ctx context.Context, target string, query url.Values,
 	body io.Reader, opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodPut, target, query, body, opts...)
+}
+
+// RemoveProxy removes the currently set proxy.
+func (c *Client) RemoveProxy() *Client {
+	t, ok := c.httpClient.Transport.(*http.Transport)
+	if !ok {
+		// TODO: Add logging as an indication that this was skipped.
+		return c
+	}
+
+	c.proxyURL = nil
+	t.Proxy = nil
+
+	return c
+}
+
+// SetBaseURL sets the url that is prepended to all request URLs.
+func (c *Client) SetBaseURL(u string) *Client {
+	if _, err := url.Parse(u); err != nil {
+		// TODO: Add logging as an indication that this failed.
+		return c
+	}
+
+	c.BaseURL = u
+	return c
+}
+
+// SetRequestHooks sets the RequestHooks to be run just before the client
+// performs requests. These are run in order. Calling SetRequestHooks will
+// replace any existing RequestHooks that have been added. To add RequestHooks
+// without replacing other hooks use AddRequestHook(s).
+func (c *Client) SetRequestHooks(hooks []RequestHook) {
+	c.requestHooks = hooks
+}
+
+// SetProxy sets the proxy URL for the Snorlax client. If the provided URL fails
+// to be parsed then nothing will be set.
+func (c *Client) SetProxy(u string) *Client {
+	t, ok := c.httpClient.Transport.(*http.Transport)
+	if !ok {
+		// TODO: Add logging as an indication that this failed.
+		return c
+	}
+
+	proxyURL, err := url.Parse(u)
+	if err != nil {
+		// TODO: Add logging as an indication that this failed.
+		return c
+	}
+
+	c.proxyURL = proxyURL
+	t.Proxy = http.ProxyURL(proxyURL)
+
+	return c
 }

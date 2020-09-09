@@ -38,9 +38,9 @@ func EchoHandler(w http.ResponseWriter, r *http.Request) {
 
 func (suite *ResponseTestSuite) SetupSuite() {
 	suite.server = httptest.NewServer(http.HandlerFunc(EchoHandler))
-	suite.client = snorlax.NewClient(snorlax.ClientOptions{
+	suite.client = snorlax.Client{
 		BaseURL: suite.server.URL,
-	})
+	}
 }
 
 func (suite *ResponseTestSuite) TearDownSuite() {
