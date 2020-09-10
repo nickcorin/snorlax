@@ -45,8 +45,9 @@ func (c *Client) call(ctx context.Context, method, target string,
 		return nil, fmt.Errorf("failed to parse url %s: %w", uri, err)
 	}
 
-	// Once the client has a logger built in, this can be logged as a warning
-	// rather than returned as an error.
+	// TODO: Replace this error with a warning log once a logger has been added
+	// to the client. We shouldn't add logs until there is a configuration to
+	// disable them.
 	if uri.RawQuery != "" {
 		return nil, fmt.Errorf("query params should not be set on the path")
 	}
@@ -63,10 +64,12 @@ func (c *Client) call(ctx context.Context, method, target string,
 		hook(req)
 	}
 
-	// httpClient could be nil if it was not set on Client creation. This is to
-	// ensure that a default http client is always present to prevent panics.
+	// httpClient is usually nil on the first request made by the client. This
+	// prevents panics by using the http.DefaultClient. In most cases, this will
+	// be sufficient. In cases where the caller wants more control over the
+	// client's configuration - SetHTTPClient can be used.
 	if c.httpClient == nil {
-		c.createClient()
+		c.httpClient = http.DefaultClient
 	}
 
 	reqStart := time.Now()
@@ -75,6 +78,8 @@ func (c *Client) call(ctx context.Context, method, target string,
 		return nil, fmt.Errorf("failed to perform http request: %w", err)
 	}
 
+	// TODO: Rethink how to provide the target path as a label effectively.
+	// Clients sending requests to dynamic paths can overload prometheus.
 	if c.EnableMetrics {
 		latencyHist.WithLabelValues(method,
 			strconv.Itoa(res.StatusCode), req.URL.Path).Observe(
@@ -82,10 +87,6 @@ func (c *Client) call(ctx context.Context, method, target string,
 	}
 
 	return &Response{*res}, nil
-}
-
-func (c *Client) createClient() {
-	c.httpClient = &http.Client{}
 }
 
 // AddRequestHook appends a RequestHook to the list of hooks which are to be run
@@ -182,8 +183,9 @@ func (c *Client) SetHTTPClient(client *http.Client) *Client {
 // performs requests. These are run in order. Calling SetRequestHooks will
 // replace any existing RequestHooks that have been added. To add RequestHooks
 // without replacing other hooks use AddRequestHook(s).
-func (c *Client) SetRequestHooks(hooks []RequestHook) {
+func (c *Client) SetRequestHooks(hooks []RequestHook) *Client {
 	c.requestHooks = hooks
+	return c
 }
 
 // SetProxy sets the proxy URL for the Snorlax client. If the provided URL fails
