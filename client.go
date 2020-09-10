@@ -6,12 +6,15 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // DefaultClient is a Snorlax client configured with all of the default options.
 var DefaultClient = &Client{
-	BaseURL: "",
+	BaseURL:       "",
+	EnableMetrics: true,
 
 	httpClient:   http.DefaultClient,
 	requestHooks: make([]RequestHook, 0),
@@ -22,6 +25,8 @@ var DefaultClient = &Client{
 type Client struct {
 	// BaseURL is prepended to the URI of all requests made by the Client.
 	BaseURL string
+	// EnableMetrics enables prometheus metrics. This is enabled by default.
+	EnableMetrics bool
 
 	httpClient *http.Client
 	proxyURL   *url.URL
@@ -64,9 +69,16 @@ func (c *Client) call(ctx context.Context, method, target string,
 		c.createClient()
 	}
 
+	reqStart := time.Now()
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform http request: %w", err)
+	}
+
+	if c.EnableMetrics {
+		latencyHist.WithLabelValues(method,
+			strconv.Itoa(res.StatusCode), req.URL.Path).Observe(
+			time.Since(reqStart).Seconds())
 	}
 
 	return &Response{*res}, nil
@@ -76,8 +88,9 @@ func (c *Client) createClient() {
 	c.httpClient = &http.Client{}
 }
 
-// AddRequestHook adds a RequestHook to be run just before the client
-// performs requests. These hooks are executed in order.
+// AddRequestHook appends a RequestHook to the list of hooks which are to be run
+// just before the client sends a request. RequestHooks are executed in the
+// order they are added.
 func (c *Client) AddRequestHook(hook RequestHook) *Client {
 	if c.requestHooks == nil {
 		c.requestHooks = make([]RequestHook, 0)
@@ -87,8 +100,8 @@ func (c *Client) AddRequestHook(hook RequestHook) *Client {
 	return c
 }
 
-// AddRequestHooks adds multiple RequestHooks to be run just before the client
-// performs requests. These hooks are executed in order.
+// AddRequestHooks is a convenience function which calls AddRequestHook multiple
+// times.
 func (c *Client) AddRequestHooks(hooks ...RequestHook) *Client {
 	for _, hook := range hooks {
 		c.AddRequestHook(hook)
@@ -155,6 +168,13 @@ func (c *Client) SetBaseURL(u string) *Client {
 	}
 
 	c.BaseURL = u
+	return c
+}
+
+// SetHTTPClient sets the internal http.Client that Snorlax uses to perform
+// requests. Use this if you want to configure client internals like timeouts.
+func (c *Client) SetHTTPClient(client *http.Client) *Client {
+	c.httpClient = client
 	return c
 }
 
