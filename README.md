@@ -49,7 +49,7 @@ client := snorlax.NewClient(snorlax.ClientOptions{
 })
 
 // You can also configure the client after construction.
-client.AddRequestHook(snorlax.WithHeader("X-Powered-By", "Snorlax")
+client.AddRequestHook(snorlax.WithHeader("X-Powered-By", "Snorlax"))
 
 // You can also chain configuration functions.
 client.SetProxyURL("https://proxy.example.com").SetHeader("X-Powered-By", "Snorlax")
@@ -57,6 +57,13 @@ client.SetProxyURL("https://proxy.example.com").SetHeader("X-Powered-By", "Snorl
 
 #### Performing a simple request.
 ```golang
+// Using the DefaultClient.
+res, err := snorlax.Get(context.Background(), "/example", nil)
+if err != nil {
+	log.Fatal(err)
+}
+
+// Using a custom Client.
 res, err := client.Get(context.Background(), "/example", nil)
 if err != nil {
 	log.Fatal(err)
@@ -88,7 +95,7 @@ if err != nil {
 #### Performing a request with `RequestHook`s.
 ```golang
 // You can set RequestHooks which run on every request.
-client.AddRequestHook("Content-Type", "application/json")
+client.AddRequestHook(snorlax.WithHeader("Content-Type", "application/json"))
 
 // You can also set RequestHooks to run for single requests.
 username, password := "testuser", "testpassword"
