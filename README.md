@@ -31,21 +31,28 @@ func main() {
 
 #### Using the DefaultClient.
 ```golang
+// You can construct a DefaultClient.
 client := snorlax.DefaultClient
+
+// ...or you can use it without allocating a new Client.
+res, err := snorlax.Get(context.Background(), "/example", nil)
+if err != nil {
+	log.Fatal(err)
+}
 ```
 
 #### Configuring the client.
 ```golang
-// You can configure some attibutes when constructing the client.
-client := snorlax.Client{
-	BaseURL: "https://www.example.com",
-}
+// You can configure some attibutes when constructing the client by using `ClientOption`s.
+client := snorlax.NewClient(snorlax.ClientOptions{
+	BaseURL: "https://example.com",
+})
 
 // You can also configure the client after construction.
 client.AddRequestHook(snorlax.WithHeader("X-Powered-By", "Snorlax")
 
 // You can also chain configuration functions.
-client.SetProxyURL("https://proxy.example.com").Get("/example", nil, nil)
+client.SetProxyURL("https://proxy.example.com").SetHeader("X-Powered-By", "Snorlax")
 ```
 
 #### Performing a simple request.
