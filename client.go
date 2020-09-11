@@ -14,20 +14,21 @@ import (
 // DefaultClient is a Snorlax client configured with all of the default options.
 var DefaultClient = &Client{
 	BaseURL:       "",
-	EnableMetrics: true,
+	EnableMetrics: false,
 
 	httpClient:   http.DefaultClient,
 	requestHooks: make([]RequestHook, 0),
 	proxyURL:     nil,
 }
 
-// Client defines a stateful REST client able to perform HTTP requests.
+// Client is a stateful REST client that is able to make HTTP requests.
 type Client struct {
 	// BaseURL is prepended to the URI of all requests made by the Client.
 	BaseURL string
-	// EnableMetrics enables prometheus metrics. This is enabled by default.
+	// EnableMetrics enables prometheus metrics. This is disabled by default.
 	EnableMetrics bool
 
+	headers    http.Header
 	httpClient *http.Client
 	proxyURL   *url.URL
 	// requestHooks is a list of RequestHooks that get applied in order to
@@ -57,6 +58,13 @@ func (c *Client) call(ctx context.Context, method, target string,
 	if err != nil {
 		return nil, fmt.Errorf("failed to create http request: %w", err)
 	}
+
+	// Set the request headers with all the headers configured in the client.
+	req.Header = c.headers
+
+	// Automatically add the Content-Length header.
+	req.Header.Set(http.CanonicalHeaderKey("Content-Length"),
+		strconv.FormatInt(req.ContentLength, 10))
 
 	// We first apply the request options from the client, so that they can be
 	// optionally overridden by individual request options.
@@ -89,6 +97,13 @@ func (c *Client) call(ctx context.Context, method, target string,
 	return &Response{*res}, nil
 }
 
+// AddHeader appends a header value to the Client to be sent in every request.
+// To replace the current existing header use SetHeader.
+func (c *Client) AddHeader(key, value string) *Client {
+	c.headers.Add(key, value)
+	return c
+}
+
 // AddRequestHook appends a RequestHook to the list of hooks which are to be run
 // just before the client sends a request. RequestHooks are executed in the
 // order they are added.
@@ -111,37 +126,118 @@ func (c *Client) AddRequestHooks(hooks ...RequestHook) *Client {
 	return c
 }
 
-// Delete performs a DELETE request.
+// Delete performs a delete request using the DefaultClient.
+//
+// You can optionally configure the request using RequestHooks. If you require
+// finer control to configure every request made then construct a Client and
+// configure it as needed.
+func Delete(ctx context.Context, target string, query url.Values,
+	body io.Reader, opts ...RequestHook) (*Response, error) {
+	return DefaultClient.call(ctx, http.MethodDelete, target, query, body,
+		opts...)
+}
+
+// Delete performs a delete request.
+//
+// You can optionally configure the request using RequestHooks, or by confiuring
+// the client if you need to configure all requests.
 func (c *Client) Delete(ctx context.Context, target string, query url.Values,
 	body io.Reader, opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodDelete, target, query, body, opts...)
 }
 
-// Get performs a GET request.
+// Get performs a get request using the DefaultClient.
+//
+// You can optionally configure the request using RequestHooks. If you require
+// finer control to configure every request made then construct a Client and
+// configure it as needed.
+func Get(ctx context.Context, target string, query url.Values,
+	opts ...RequestHook) (*Response, error) {
+	return DefaultClient.call(ctx, http.MethodGet, target, query, nil, opts...)
+}
+
+// Get performs a Get request.
+//
+// You can optionally configure the request using RequestHooks, or by confiuring
+// the client if you need to configure all requests.
 func (c *Client) Get(ctx context.Context, target string, query url.Values,
 	opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodGet, target, query, nil, opts...)
 }
 
-// Head performs a HEAD request.
+// Head performs a head request using the DefaultClient.
+//
+// You can optionally configure the request using RequestHooks. If you require
+// finer control to configure every request made then construct a Client and
+// configure it as needed.
 func (c *Client) Head(ctx context.Context, target string, query url.Values,
 	opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodHead, target, query, nil, opts...)
 }
 
-// Options performs a OPTIONS request.
+// Head performs a head request.
+//
+// You can optionally configure the request using RequestHooks, or by confiuring
+// the client if you need to configure all requests.
+func Head(ctx context.Context, target string, query url.Values,
+	opts ...RequestHook) (*Response, error) {
+	return DefaultClient.call(ctx, http.MethodHead, target, query, nil, opts...)
+}
+
+// Options performs an options request using the DefaultClient.
+//
+// You can optionally configure the request using RequestHooks. If you require
+// finer control to configure every request made then construct a Client and
+// configure it as needed.
+func Options(ctx context.Context, target string, query url.Values,
+	opts ...RequestHook) (*Response, error) {
+	return DefaultClient.call(ctx, http.MethodOptions, target, query, nil,
+		opts...)
+}
+
+// Options performs an options request.
+//
+// You can optionally configure the request using RequestHooks, or by confiuring
+// the client if you need to configure all requests.
 func (c *Client) Options(ctx context.Context, target string, query url.Values,
 	opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodOptions, target, query, nil, opts...)
 }
 
-// Post performs a POST request.
+// Post performs a post request using the DefaultClient.
+//
+// You can optionally configure the request using RequestHooks. If you require
+// finer control to configure every request made then construct a Client and
+// configure it as needed.
+func Post(ctx context.Context, target string, query url.Values,
+	body io.Reader, opts ...RequestHook) (*Response, error) {
+	return DefaultClient.call(ctx, http.MethodPost, target, query, body,
+		opts...)
+}
+
+// Post performs a post request.
+//
+// You can optionally configure the request using RequestHooks, or by confiuring
+// the client if you need to configure all requests.
 func (c *Client) Post(ctx context.Context, target string, query url.Values,
 	body io.Reader, opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodPost, target, query, body, opts...)
 }
 
-// Put performs a PUT request.
+// Put performs a put request using the DefaultClient.
+//
+// You can optionally configure the request using RequestHooks. If you require
+// finer control to configure every request made then construct a Client and
+// configure it as needed.
+func Put(ctx context.Context, target string, query url.Values,
+	body io.Reader, opts ...RequestHook) (*Response, error) {
+	return DefaultClient.call(ctx, http.MethodPut, target, query, body, opts...)
+}
+
+// Put performs a put request.
+//
+// You can optionally configure the request using RequestHooks, or by confiuring
+// the client if you need to configure all requests.
 func (c *Client) Put(ctx context.Context, target string, query url.Values,
 	body io.Reader, opts ...RequestHook) (*Response, error) {
 	return c.call(ctx, http.MethodPut, target, query, body, opts...)
@@ -169,6 +265,14 @@ func (c *Client) SetBaseURL(u string) *Client {
 	}
 
 	c.BaseURL = u
+	return c
+}
+
+// SetHeader sets a header value in the client to be sent in every request. This
+// will overwrite any exiting headers present associated with the same key. To
+// add headers to the key instead of replacing them use AddHeader.
+func (c *Client) SetHeader(key, value string) *Client {
+	c.headers.Set(key, value)
 	return c
 }
 
