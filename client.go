@@ -16,6 +16,7 @@ var DefaultClient = &Client{
 	BaseURL:       "",
 	EnableMetrics: false,
 
+	headers:      make(http.Header),
 	httpClient:   http.DefaultClient,
 	requestHooks: make([]RequestHook, 0),
 	proxyURL:     nil,
@@ -60,6 +61,9 @@ func (c *Client) call(ctx context.Context, method, target string,
 	}
 
 	// Set the request headers with all the headers configured in the client.
+	if c.headers == nil {
+		c.headers = make(http.Header)
+	}
 	req.Header = c.headers
 
 	// Automatically add the Content-Length header.
