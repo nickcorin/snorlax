@@ -100,10 +100,17 @@ client.AddRequestHook(snorlax.WithHeader("Content-Type", "application/json"))
 // You can also set RequestHooks to run for single requests.
 username, password := "testuser", "testpassword"
 
-res, err := client.Get(context.Background(), "/example", nil, WithBasicAuth(username, password))
+res, err := client.Get(context.Background(), "/example", nil, snorlax.WithBasicAuth(username, password))
 if err != nil {
 	log.Fatal(err)
 }
+
+// You can even define your own hooks!
+func MyLoggerHook(r *http.Request) {
+	log.Printf("snorlax is sending a request to %s!\n", r.URL.Path)
+}
+
+client.AddRequestHook(MyLoggerHook)
 ```
 
 #### Extracting JSON out of a response.
