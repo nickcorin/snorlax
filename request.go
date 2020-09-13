@@ -5,24 +5,21 @@ import "net/http"
 type (
 	// RequestHook is a middleware function that can be applied to an HTTP
 	// request before it's sent.
-	RequestHook func(*http.Request)
-
-	// ResponseHook is a middleware function that can be applied to an HTTP
-	// response as it's received.
-	ResponseHook func(*http.Response)
+	RequestHook func(Client, *http.Request) error
 )
 
-// WithBasicAuth returns a RequestHook to set basic authentication on a
-// request.
+// WithBasicAuth sets basic authentication on the request.
 func WithBasicAuth(username, password string) RequestHook {
-	return func(r *http.Request) {
+	return func(c Client, r *http.Request) error {
 		r.SetBasicAuth(username, password)
+		return nil
 	}
 }
 
-// WithHeader provides a RequestHook to set a header on a request.
+// WithHeader adds a the header key value pair to the request.
 func WithHeader(key, value string) RequestHook {
-	return func(r *http.Request) {
-		r.Header.Set(key, value)
+	return func(c Client, r *http.Request) error {
+		r.Header.Add(key, value)
+		return nil
 	}
 }

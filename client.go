@@ -210,18 +210,21 @@ func (c *client) call(ctx context.Context, method, target string,
 	req.Header.Set(http.CanonicalHeaderKey("Content-Length"),
 		strconv.FormatInt(req.ContentLength, 10))
 
-	// We first apply the request options from the client, so that they can be
-	// optionally overridden by individual request options.
-	for _, hook := range append(c.opts.requestHooks, hooks...) {
-		hook(req)
-	}
-
 	// httpClient is usually nil on the first request made by the client. This
 	// prevents panics by using the http.DefaultClient. In most cases, this will
 	// be sufficient. In cases where the caller wants more control over the
 	// client's configuration - SethttpClient can be used.
 	if c.opts.httpClient == nil {
 		c.opts.httpClient = http.DefaultClient
+	}
+
+	// We first apply the request options from the client, so that they can be
+	// optionally overridden by individual request options.
+	for _, hook := range append(c.opts.requestHooks, hooks...) {
+		if err = hook(c, req); err != nil {
+			return nil, fmt.Errorf("failed to execute pre-request hook: %w",
+				err)
+		}
 	}
 
 	reqStart := time.Now()

@@ -13,6 +13,11 @@ import (
 
 type HooksTestSuite struct {
 	suite.Suite
+	client snorlax.Client
+}
+
+func (suite *HooksTestSuite) SetupSuite() {
+	suite.client = snorlax.DefaultClient
 }
 
 func (suite *HooksTestSuite) TestWithBasicAuth() {
@@ -22,7 +27,7 @@ func (suite *HooksTestSuite) TestWithBasicAuth() {
 	r := httptest.NewRequest(http.MethodGet, "/test", nil)
 	suite.Require().Empty(r.Header.Get(headerKey))
 
-	snorlax.WithBasicAuth(username, password)(r)
+	snorlax.WithBasicAuth(username, password)(suite.client, r)
 	headerValue := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s",
 		username, password)))
 	suite.Require().Equal(fmt.Sprintf("Basic %s", headerValue),
@@ -35,7 +40,7 @@ func (suite *HooksTestSuite) TestWithHeader() {
 	r := httptest.NewRequest(http.MethodGet, "/test", nil)
 	suite.Require().Empty(r.Header.Get(headerKey))
 
-	snorlax.WithHeader(headerKey, headerValue)(r)
+	snorlax.WithHeader(headerKey, headerValue)(suite.client, r)
 	suite.Require().Equal(headerValue, r.Header.Get(headerKey))
 }
 

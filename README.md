@@ -106,7 +106,7 @@ if err != nil {
 }
 
 // You can even define your own hooks!
-func MyLoggerHook(r *http.Request) {
+func MyLoggerHook(c snorlax.Client, r *http.Request) {
 	log.Printf("snorlax is sending a request to %s!\n", r.URL.Path)
 }
 
