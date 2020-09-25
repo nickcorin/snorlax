@@ -251,7 +251,7 @@ func (c *client) call(ctx context.Context, method, target string,
 	}
 	c.opts.logger.Trace("pre-request hooks complete")
 
-	c.opts.logger.Trace("performing request to %s", req.URL.String())
+	c.opts.logger.WithField("url", req.URL.String()).Trace("performing request")
 	reqStart := time.Now()
 	res, err := c.opts.httpClient.Do(req)
 	if err != nil {
