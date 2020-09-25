@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Client defines a wrapper around an http.Client making it easier to send
@@ -45,6 +47,9 @@ type Client interface {
 	Head(ctx context.Context, target string, query url.Values,
 		hooks ...RequestHook) (*Response, error)
 
+	// Logger returns the client's internal logger.
+	Logger() *logrus.Logger
+
 	// Options performs a Options request. You can optionally configure the
 	// request using RequestHooks, or by configuring the client if you need to
 	// configure  all requests.
@@ -80,6 +85,11 @@ type Client interface {
 	// perform requests. Use this if you need finer control over the client's
 	// internals.
 	SetHTTPClient(c *http.Client) Client
+
+	// SetLogLevel sets the amount of logs the client will produce. The lower
+	// the level, the less logs will be written. By default, Snorlax uses the
+	// lowest possible level - PanicLevel.
+	SetLogLevel(level logrus.Level) Client
 
 	// SetProxy sets the proxy URL in the clent's transport. If the URL fails
 	// to parse, nothing is set. This function fails silently. If you need more
@@ -160,21 +170,30 @@ type ClientOptions struct {
 
 	headers      http.Header
 	httpClient   *http.Client
+	logger       *logrus.Logger
+	logLevel     logrus.Level
 	proxyURL     *url.URL
 	requestHooks []RequestHook
 }
 
 // Defaults returns a set of default ClientOptions.
 func Defaults() *ClientOptions {
-	return &ClientOptions{
+	opts := ClientOptions{
 		BaseURL:     "",
 		WithMetrics: false,
 
 		headers:      make(http.Header),
 		httpClient:   http.DefaultClient,
+		logger:       logrus.New(),
+		logLevel:     logrus.PanicLevel,
 		proxyURL:     nil,
 		requestHooks: make([]RequestHook, 0),
 	}
+
+	opts.logger.SetLevel(opts.logLevel)
+	opts.logger.SetFormatter(&logrus.JSONFormatter{})
+
+	return &opts
 }
 
 func (c *client) call(ctx context.Context, method, target string,
@@ -187,13 +206,13 @@ func (c *client) call(ctx context.Context, method, target string,
 		return nil, fmt.Errorf("failed to parse url %s: %w", uri, err)
 	}
 
-	// TODO: Replace this error with a warning log once a logger has been added
-	// to the client. We shouldn't add logs until there is a configuration to
-	// disable them.
 	if uri.RawQuery != "" {
-		return nil, fmt.Errorf("query params should not be set on the path")
+		c.opts.logger.Warnln("query parameters should not be set on the " +
+			"path, they will be overridden")
 	}
 	uri.RawQuery = query.Encode()
+
+	c.opts.logger.Tracef("uri parsed as %s", uri.String())
 
 	req, err := http.NewRequestWithContext(ctx, method, uri.String(), body)
 	if err != nil {
@@ -206,6 +225,8 @@ func (c *client) call(ctx context.Context, method, target string,
 	}
 	req.Header = c.opts.headers
 
+	c.opts.logger.Tracef("setting content-length header to %d",
+		req.ContentLength)
 	// Automatically add the Content-Length header.
 	req.Header.Set(http.CanonicalHeaderKey("Content-Length"),
 		strconv.FormatInt(req.ContentLength, 10))
@@ -215,9 +236,11 @@ func (c *client) call(ctx context.Context, method, target string,
 	// be sufficient. In cases where the caller wants more control over the
 	// client's configuration - SethttpClient can be used.
 	if c.opts.httpClient == nil {
+		c.opts.logger.Trace("internal client set to http.DefaultClient")
 		c.opts.httpClient = http.DefaultClient
 	}
 
+	c.opts.logger.Trace("running pre-request hooks")
 	// We first apply the request options from the client, so that they can be
 	// optionally overridden by individual request options.
 	for _, hook := range append(c.opts.requestHooks, hooks...) {
@@ -226,12 +249,21 @@ func (c *client) call(ctx context.Context, method, target string,
 				err)
 		}
 	}
+	c.opts.logger.Trace("pre-request hooks complete")
 
+	c.opts.logger.Trace("performing request to %s", req.URL.String())
 	reqStart := time.Now()
 	res, err := c.opts.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to perform http request: %w", err)
 	}
+
+	c.opts.logger.WithFields(logrus.Fields{
+		"method":      method,
+		"latency":     time.Since(reqStart).Seconds(),
+		"status_code": res.StatusCode,
+		"url":         uri.String(),
+	}).Debug("request complete")
 
 	// TODO: Rethink how to provide the target path as a label effectively.
 	// clients sending requests to dynamic paths can overload prometheus.
@@ -247,6 +279,8 @@ func (c *client) call(ctx context.Context, method, target string,
 // AddHeader appends a header value to the client to be sent in every request.
 // To replace the current existing header use SetHeader.
 func (c *client) AddHeader(key, value string) Client {
+	c.opts.logger.WithFields(logrus.Fields{"key": key, "value": value}).
+		Trace("setting request header")
 	c.opts.headers.Add(key, value)
 	return c
 }
@@ -291,6 +325,11 @@ func (c *client) Head(ctx context.Context, target string, query url.Values,
 	return c.call(ctx, http.MethodHead, target, query, nil, opts...)
 }
 
+// Logger satisfies the Client interface.
+func (c *client) Logger() *logrus.Logger {
+	return c.opts.logger
+}
+
 // Options satisfies the Client interface.
 func (c *client) Options(ctx context.Context, target string, query url.Values,
 	opts ...RequestHook) (*Response, error) {
@@ -313,12 +352,14 @@ func (c *client) Put(ctx context.Context, target string, query url.Values,
 func (c *client) RemoveProxy() Client {
 	t, ok := c.opts.httpClient.Transport.(*http.Transport)
 	if !ok {
-		// TODO: Add logging as an indication that this was skipped.
+		c.opts.logger.Warn("proxy not removed: client transport failed " +
+			"assertion")
 		return c
 	}
 
 	c.opts.proxyURL = nil
 	t.Proxy = nil
+	c.opts.logger.Trace("proxy removed")
 
 	return c
 }
@@ -326,11 +367,13 @@ func (c *client) RemoveProxy() Client {
 // SetBaseURL sets the url that is prepended to all request URLs.
 func (c *client) SetBaseURL(u string) Client {
 	if _, err := url.Parse(u); err != nil {
-		// TODO: Add logging as an indication that this failed.
+		c.opts.logger.WithField("url", u).
+			Warn("base url not set: failed to parse")
 		return c
 	}
 
 	c.opts.BaseURL = u
+	c.opts.logger.WithField("url", u).Trace("base url set")
 	return c
 }
 
@@ -339,6 +382,8 @@ func (c *client) SetBaseURL(u string) Client {
 // add headers to the key instead of replacing them use AddHeader.
 func (c *client) SetHeader(key, value string) Client {
 	c.opts.headers.Set(key, value)
+	c.opts.logger.WithField("key", key).WithField("value", value).
+		Trace("header set")
 	return c
 }
 
@@ -346,6 +391,15 @@ func (c *client) SetHeader(key, value string) Client {
 // requests. Use this if you want to configure client internals like timeouts.
 func (c *client) SetHTTPClient(client *http.Client) Client {
 	c.opts.httpClient = client
+	c.opts.logger.Trace("http client set")
+	return c
+}
+
+// SetLogLevel satisfies the Client interface.
+func (c *client) SetLogLevel(level logrus.Level) Client {
+	c.opts.logger.SetLevel(level)
+	c.opts.logLevel = level
+	c.opts.logger.WithField("level", level.String()).Trace("log level set")
 	return c
 }
 
@@ -363,18 +417,21 @@ func (c *client) SetRequestHooks(hooks []RequestHook) Client {
 func (c *client) SetProxy(u string) Client {
 	t, ok := c.opts.httpClient.Transport.(*http.Transport)
 	if !ok {
-		// TODO: Add logging as an indication that this failed.
+		c.opts.logger.Warn("proxy not set: client transport failed " +
+			"assertion")
 		return c
 	}
 
 	proxyURL, err := url.Parse(u)
 	if err != nil {
-		// TODO: Add logging as an indication that this failed.
+		c.opts.logger.WithField("url", u).
+			Warn("proxy url not set: failed to parse")
 		return c
 	}
 
 	c.opts.proxyURL = proxyURL
 	t.Proxy = http.ProxyURL(proxyURL)
+	c.opts.logger.WithField("url", u).Trace("proxy url set")
 
 	return c
 }
