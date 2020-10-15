@@ -245,6 +245,11 @@ func (c *client) call(ctx context.Context, method, target string,
 	}
 	c.opts.logger.Trace("pre-request hooks complete")
 
+	for k, v := range req.Header {
+		c.opts.logger.WithField("key", k).WithField("value", v).
+			Trace("header set")
+	}
+
 	c.opts.logger.WithField("url", req.URL.String()).Trace("performing request")
 	reqStart := time.Now()
 	res, err := c.opts.httpClient.Do(req)
