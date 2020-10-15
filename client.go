@@ -225,12 +225,6 @@ func (c *client) call(ctx context.Context, method, target string,
 	}
 	req.Header = c.opts.headers
 
-	c.opts.logger.Tracef("setting content-length header to %d",
-		req.ContentLength)
-	// Automatically add the Content-Length header.
-	req.Header.Set(http.CanonicalHeaderKey("Content-Length"),
-		strconv.FormatInt(req.ContentLength, 10))
-
 	// httpClient is usually nil on the first request made by the client. This
 	// prevents panics by using the http.DefaultClient. In most cases, this will
 	// be sufficient. In cases where the caller wants more control over the
