@@ -19,7 +19,7 @@ func WithBasicAuth(username, password string) RequestHook {
 // WithHeader adds a the header key value pair to the request.
 func WithHeader(key, value string) RequestHook {
 	return func(c Client, r *http.Request) error {
-		r.Header.Add(key, value)
+		r.Header.Set(key, value)
 		return nil
 	}
 }
